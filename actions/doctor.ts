@@ -28,13 +28,12 @@ export async function submitDoctorVerification(data: {
   colegiationNumber?: string;
   cluesId?: string;
 }) {
-  const supabase = createServiceClient();
-  const { error } = await supabase.schema('clinical_data').from('doctor_verification').insert({
-    doctor_id: data.doctorId,
+  const supabase = createClient();
+  const { error } = await supabase.rpc('submit_doctor_verification', {
+    doctor_user_id: data.doctorId,
     professional_license: data.professionalLicense,
     colegiation_number: data.colegiationNumber || null,
     clues_id: data.cluesId || null,
-    status: 'PENDING',
   });
 
   if (error) {
@@ -44,50 +43,13 @@ export async function submitDoctorVerification(data: {
 
 export async function getDoctorDashboardStats(doctorId: string) {
   const supabase = createClient();
-  const { data: consents, error: consentError } = await supabase
-    .schema('clinical_data')
-    .from('patient_doctor_consent')
-    .select('patient_id')
-    .eq('doctor_id', doctorId)
-    .eq('status', 'ACTIVE');
+  const { data, error } = await supabase.rpc('get_doctor_dashboard_stats', { doctor_user_id: doctorId });
 
-  if (consentError) {
-    throw new Error(consentError.message);
+  if (error) {
+    throw new Error(error.message);
   }
 
-  const patientIds = (consents ?? []).map((item) => item.patient_id);
-  if (!patientIds.length) {
-    return { total: 0, ROJO: 0, AMARILLO: 0, VERDE: 0, pending: 0 };
-  }
-
-  const { data: documents, error: docError } = await supabase
-    .schema('clinical_data')
-    .from('clinical_documents')
-    .select('patient_id, document_type, created_at')
-    .in('patient_id', patientIds)
-    .order('created_at', { ascending: false });
-
-  if (docError) {
-    throw new Error(docError.message);
-  }
-
-  const latestByPatient = new Map<string, DocumentType>();
-  (documents ?? []).forEach((document) => {
-    if (!latestByPatient.has(document.patient_id)) {
-      latestByPatient.set(document.patient_id, document.document_type as DocumentType);
-    }
-  });
-
-  const counts: Record<DocumentType, number> = { ROJO: 0, AMARILLO: 0, VERDE: 0 };
-  latestByPatient.forEach((triage) => {
-    counts[triage] += 1;
-  });
-
-  return {
-    total: patientIds.length,
-    ...counts,
-    pending: 0,
-  };
+  return (data ?? { total: 0, ROJO: 0, AMARILLO: 0, VERDE: 0, pending: 0 }) as { total: number; ROJO: number; AMARILLO: number; VERDE: number; pending: number };
 }
 
 export async function getDoctorPatients(search: string, triageFilter: string, page: number, limit: number) {
@@ -97,66 +59,27 @@ export async function getDoctorPatients(search: string, triageFilter: string, pa
     throw new Error('No autenticado');
   }
 
-  const { data: consents, error: consentError } = await supabase
-    .schema('clinical_data')
-    .from('patient_doctor_consent')
-    .select('patient_id, status, clues_id, invited_at')
-    .eq('doctor_id', authUser.user.id)
-    .eq('status', 'ACTIVE');
+  const { data, error } = await supabase.rpc('get_doctor_patients', {
+    doctor_user_id: authUser.user.id,
+    search_text: search,
+    triage_filter: triageFilter,
+    page_number: page,
+    page_limit: limit,
+  });
 
-  if (consentError) {
-    throw new Error(consentError.message);
+  if (error) {
+    throw new Error(error.message);
   }
 
-  const patientIds = (consents ?? []).map((item) => item.patient_id);
-  if (!patientIds.length) {
+  const patients = (data ?? []) as Array<{ id: string; legal_name: string; email: string; role: string; is_active: boolean; created_at: string; triage: DocumentType }>;
+
+  if (!patients.length) {
     return { data: [], total: 0 };
   }
 
-  const [profilesResult, documentsResult] = await Promise.all([
-    supabase.schema('core_auth').from('user_profiles').select('id, legal_name, email, role, is_active, created_at').in('id', patientIds),
-    supabase.schema('clinical_data').from('clinical_documents').select('patient_id, document_type, created_at').in('patient_id', patientIds).order('created_at', { ascending: false }),
-  ]);
-
-  if (profilesResult.error) {
-    throw new Error(profilesResult.error.message);
-  }
-
-  if (documentsResult.error) {
-    throw new Error(documentsResult.error.message);
-  }
-
-  const latestByPatient = new Map<string, DocumentType>();
-  (documentsResult.data ?? []).forEach((document) => {
-    if (!latestByPatient.has(document.patient_id)) {
-      latestByPatient.set(document.patient_id, document.document_type as DocumentType);
-    }
-  });
-
-  const merged = (profilesResult.data ?? [])
-    .map((profile: { id: string; legal_name: string; email: string; role: string; is_active: boolean; created_at: string }) => {
-      const triage = latestByPatient.get(profile.id) ?? 'VERDE';
-      return {
-        ...profile,
-        triage,
-      };
-    })
-    .filter((patient) => {
-      const matchesSearch = search
-        ? patient.legal_name.toLowerCase().includes(search.toLowerCase()) || patient.email.toLowerCase().includes(search.toLowerCase())
-        : true;
-      const matchesTriage = triageFilter ? patient.triage === triageFilter : true;
-      return matchesSearch && matchesTriage;
-    })
-    .sort((a, b) => {
-      const order: Record<string, number> = { ROJO: 0, AMARILLO: 1, VERDE: 2 };
-      return order[a.triage] - order[b.triage];
-    });
-
-  const start = (page - 1) * limit;
   return {
-    data: merged.slice(start, start + limit),
-    total: merged.length,
+    data: patients,
+    total: patients.length,
   };
 }
 

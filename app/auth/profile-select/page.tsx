@@ -40,9 +40,15 @@ export default function ProfileSelectPage() {
     if (!userId) return;
     setLoadingRole(true);
     try {
-      await updateUserRole(userId, role);
-      toast.success('Perfil guardado');
-      router.push(role === 'PATIENT' ? '/dashboard' : '/auth/verify-professional');
+      if (role === 'PATIENT') {
+        await updateUserRole(userId, role);
+        toast.success('Perfil guardado');
+        router.push('/dashboard');
+        return;
+      }
+
+      toast.success('Completa tu verificación médica');
+      router.push('/auth/verify-professional');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo guardar el perfil');
     } finally {

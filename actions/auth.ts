@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import type { UserRole } from '@/types';
 
 export async function signInWithMagicLink(email: string): Promise<{ ok: boolean; message: string }> {
@@ -35,27 +35,19 @@ export async function exchangeCodeForSession(code: string) {
 
 export async function getUserRole(userId: string) {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .schema('core_auth')
-    .from('user_profiles')
-    .select('role')
-    .eq('id', userId)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('get_user_role', { user_id: userId });
 
   if (error) {
-    throw new Error(error.message);
+    console.error('getUserRole failed:', error.message);
+    return null;
   }
 
-  return data?.role as UserRole | null;
+  return (data as UserRole | null) ?? null;
 }
 
 export async function updateUserRole(userId: string, role: UserRole) {
-  const supabase = createServiceClient();
-  const { error } = await supabase
-    .schema('core_auth')
-    .from('user_profiles')
-    .update({ role })
-    .eq('id', userId);
+  const supabase = createClient();
+  const { error } = await supabase.rpc('upsert_user_role', { user_id: userId, new_role: role });
 
   if (error) {
     throw new Error(error.message);

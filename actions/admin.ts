@@ -6,7 +6,7 @@ import { resend } from '@/lib/resend';
 import { DoctorApprovalEmail, DoctorRejectionEmail } from '@/emails/DoctorApprovalEmail';
 
 export async function getAdminStats() {
-  const supabase = createClient();
+  const supabase = createServiceClient();
   const [pendingDoctors, totalUsers, activeDoctors, activePatients] = await Promise.all([
     supabase.schema('clinical_data').from('doctor_verification').select('*', { count: 'exact', head: true }).eq('status', 'PENDING'),
     supabase.schema('core_auth').from('user_profiles').select('*', { count: 'exact', head: true }),
@@ -23,7 +23,7 @@ export async function getAdminStats() {
 }
 
 export async function getPendingVerifications() {
-  const supabase = createClient();
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .schema('clinical_data')
     .from('doctor_verification')

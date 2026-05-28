@@ -25,7 +25,7 @@ export default async function ProfilePage() {
     }
   }
 
-  const dashboardLink = profile?.role === 'PATIENT' ? '/dashboard' : profile?.role === 'PROFESSIONAL' ? '/doctor/dashboard' : '/admin/dashboard';
+  const dashboardLink = profile?.role === 'PATIENT' ? '/dashboard' : profile?.role === 'PROFESSIONAL' ? '/doctor/dashboard' : '/auth/profile-select';
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
@@ -42,7 +42,7 @@ export default async function ProfilePage() {
         </div>
         <div>
           <p className="text-sm text-slate-500">Rol</p>
-          <p className="font-semibold text-slate-950">{profile?.role ?? 'N/A'}</p>
+          <p className="font-semibold text-slate-950">{profile?.role ?? 'PENDIENTE'}</p>
         </div>
         <div>
           <p className="text-sm text-slate-500">Doctor asignado</p>
@@ -50,7 +50,7 @@ export default async function ProfilePage() {
         </div>
       </div>
       <Link href={dashboardLink} className="inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white">
-        Volver al panel
+        {profile?.role === 'PROFESSIONAL' ? 'Ir al panel médico' : profile?.role === 'PATIENT' ? 'Ir al panel' : 'Completar perfil'}
       </Link>
     </div>
   );

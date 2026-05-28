@@ -67,6 +67,7 @@ MedAlert is a Next.js 14 App Router project for patient, doctor, and admin clini
 
 - Supabase tables live under the `core_auth`, `clinical_data`, `medical_catalogs`, and `audit` schemas described in the provided SQL file.
 - Use the SQL script from the project brief before testing the app against a real Supabase project.
+- For password sign-up, make sure Supabase Authentication has email confirmations enabled so new doctors receive the confirmation link.
 - To use the 6-digit backup code flow, update the Supabase email template to include `{{ .Token }}` in the magic-link email body.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 

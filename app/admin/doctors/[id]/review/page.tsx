@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { reviewDoctor } from '@/actions/admin';
+import { getUserRole } from '@/actions/auth';
 import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
 
@@ -25,6 +26,13 @@ export default function ReviewDoctorPage() {
         router.push('/auth/login');
         return;
       }
+
+      const role = await getUserRole(authData.user.id);
+      if (role !== 'SUPER_ADMIN') {
+        router.push('/unauthorized');
+        return;
+      }
+
       setAdminId(authData.user.id);
 
       const { data: verificationData } = await supabase

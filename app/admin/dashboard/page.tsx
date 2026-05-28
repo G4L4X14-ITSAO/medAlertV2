@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getAdminStats, getPendingVerifications } from '@/actions/admin';
+import { getUserRole } from '@/actions/auth';
 
 export default async function AdminDashboardPage() {
   const supabase = createClient();
@@ -15,10 +16,8 @@ export default async function AdminDashboardPage() {
     redirect('/auth/login');
   }
 
-  const userId = user.id;
-
-  const { data: profile } = await supabase.schema('core_auth').from('user_profiles').select('role').eq('id', userId).maybeSingle();
-  if (profile?.role !== 'SUPER_ADMIN') {
+  const role = await getUserRole(user.id);
+  if (role !== 'SUPER_ADMIN') {
     redirect('/unauthorized');
   }
 

@@ -34,8 +34,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', req.url));
   }
 
-  const { data: profile } = await supabase.schema('core_auth').from('user_profiles').select('role').eq('id', user.id).maybeSingle();
-  const role = profile?.role;
+  const { data: role, error } = await supabase.rpc('get_user_role', { user_id: user.id });
+
+  if (error) {
+    return NextResponse.next({ request: { headers: req.headers } });
+  }
 
   if (path.startsWith('/admin') && role !== 'SUPER_ADMIN') {
     return NextResponse.redirect(new URL('/unauthorized', req.url));

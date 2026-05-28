@@ -6,9 +6,8 @@ import { useRouter } from 'next/navigation';
 import AsyncSelect from 'react-select/async';
 import toast from 'react-hot-toast';
 import { createClient } from '@/lib/supabase/client';
-import { searchClues, submitDoctorVerification } from '@/actions/doctor';
+import { searchClues } from '@/actions/doctor';
 import { Button } from '@/components/ui/Button';
-import { updateUserRole } from '@/actions/auth';
 
 export default function VerifyProfessionalPage() {
   const router = useRouter();
@@ -44,15 +43,19 @@ export default function VerifyProfessionalPage() {
 
     setLoading(true);
     try {
-      await submitDoctorVerification({
-        doctorId: userId,
-        professionalLicense: license,
-        colegiationNumber: collegeNumber || undefined,
-        cluesId: cluesId || undefined,
+      const { error } = await supabase.rpc('submit_doctor_verification', {
+        doctor_user_id: userId,
+        professional_license: license,
+        colegiation_number: collegeNumber || null,
+        clues_id: cluesId || null,
       });
-      await updateUserRole(userId, 'PROFESSIONAL');
-      toast.success('Verificación enviada');
-      router.push('/doctor/dashboard');
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast.success('Verificación enviada. Espera la aprobación del administrador.');
+      router.push('/profile');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo enviar la verificación');
     } finally {
@@ -81,6 +84,8 @@ export default function VerifyProfessionalPage() {
           />
           <div className="rounded-2xl border border-slate-200 px-3 py-2">
             <AsyncSelect
+              instanceId="medical-clues-select"
+              inputId="medical-clues-select-input"
               cacheOptions
               defaultOptions
               loadOptions={loadCluesOptions}

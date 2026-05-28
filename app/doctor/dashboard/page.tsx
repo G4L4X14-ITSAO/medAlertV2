@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getDoctorDashboardStats, getDoctorPatients } from '@/actions/doctor';
+import { getUserRole } from '@/actions/auth';
 import { getTriageColor } from '@/utils/helpers';
 
 export default async function DoctorDashboardPage() {
@@ -16,8 +17,8 @@ export default async function DoctorDashboardPage() {
     redirect('/auth/login');
   }
 
-  const { data: profile } = await supabase.schema('core_auth').from('user_profiles').select('role').eq('id', user.id).maybeSingle();
-  if (profile?.role !== 'PROFESSIONAL' && profile?.role !== 'SUPER_ADMIN') {
+  const role = await getUserRole(user.id);
+  if (role !== 'PROFESSIONAL' && role !== 'SUPER_ADMIN') {
     redirect('/unauthorized');
   }
 
