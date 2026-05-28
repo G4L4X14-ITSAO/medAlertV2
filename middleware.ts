@@ -37,7 +37,7 @@ export async function middleware(req: NextRequest) {
   const { data: role, error } = await supabase.rpc('get_user_role', { user_id: user.id });
 
   if (error) {
-    return NextResponse.next({ request: { headers: req.headers } });
+    return NextResponse.redirect(new URL('/auth/login', req.url));
   }
 
   if (path.startsWith('/admin') && role !== 'SUPER_ADMIN') {

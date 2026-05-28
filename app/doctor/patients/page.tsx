@@ -45,13 +45,22 @@ export default function PatientsPage() {
   }, [page, search, triageFilter]);
 
   const handleInvite = async () => {
+    if (!inviteEmail) {
+      toast.error('Ingresa un correo electrónico');
+      return;
+    }
     setInviting(true);
     try {
-      await invitePatient(inviteEmail, inviteClues || undefined);
-      toast.success('Paciente invitado');
+      const result = await invitePatient(inviteEmail, inviteClues || undefined);
       setShowInviteModal(false);
       setInviteEmail('');
       setInviteClues('');
+      if (result?.emailSent) {
+        toast.success('Invitación enviada por correo');
+      } else {
+        toast.success('Paciente vinculado. El correo no está configurado en el servidor.');
+      }
+      await fetchPatients();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo invitar al paciente');
     } finally {

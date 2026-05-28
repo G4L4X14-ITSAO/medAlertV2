@@ -33,10 +33,16 @@ export default function LoginPage() {
     const supabase = createClient();
 
     const checkSession = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        router.replace('/auth/profile-select');
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: roleData } = await supabase.rpc('get_user_role', { user_id: user.id });
+      const role = roleData as string | null;
+      router.replace(
+        role === 'SUPER_ADMIN' ? '/admin/dashboard'
+        : role === 'PROFESSIONAL' ? '/doctor/dashboard'
+        : role === 'PATIENT' ? '/dashboard'
+        : '/auth/profile-select'
+      );
     };
 
     checkSession();
@@ -86,8 +92,19 @@ export default function LoginPage() {
         return;
       }
 
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: roleData } = user
+        ? await supabase.rpc('get_user_role', { user_id: user.id })
+        : { data: null };
+      const role = roleData as string | null;
+
       toast.success('Sesión iniciada');
-      router.replace('/auth/profile-select');
+      router.replace(
+        role === 'SUPER_ADMIN' ? '/admin/dashboard'
+        : role === 'PROFESSIONAL' ? '/doctor/dashboard'
+        : role === 'PATIENT' ? '/dashboard'
+        : '/auth/profile-select'
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo iniciar sesión';
       console.error('Auth submit failed:', error);

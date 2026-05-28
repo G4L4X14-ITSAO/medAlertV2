@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, UserPlus, FolderOpen } from 'lucide-react';
+import { LayoutDashboard, Users, FolderOpen } from 'lucide-react';
 
 const navItems = [
   { href: '/doctor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/doctor/patients', label: 'Mis Pacientes', icon: Users },
-  { href: '/doctor/patients?invite=true', label: 'Invitar Paciente', icon: UserPlus },
   { href: '/profile', label: 'Perfil', icon: FolderOpen },
 ];
 

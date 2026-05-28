@@ -12,8 +12,8 @@ export default function ReviewDoctorPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const supabase = createClient();
-  const [doctor, setDoctor] = useState<any>(null);
-  const [verification, setVerification] = useState<any>(null);
+  const [doctor, setDoctor] = useState<{ id: string; legal_name: string; email: string } | null>(null);
+  const [verification, setVerification] = useState<{ id: string; professional_license: string; colegiation_number: string | null; status: string } | null>(null);
   const [decision, setDecision] = useState<'APPROVED' | 'REJECTED'>('APPROVED');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,17 +35,25 @@ export default function ReviewDoctorPage() {
 
       setAdminId(authData.user.id);
 
-      const { data: verificationData } = await supabase
-        .from('doctor_verification')
-        .select('id, doctor_id, professional_license, colegiation_number, clues_id, status, submitted_at')
-        .eq('id', id)
-        .single();
+      const { data, error } = await supabase.rpc('get_doctor_verification_detail', { p_id: id });
 
-      setVerification(verificationData);
-      if (verificationData?.doctor_id) {
-        const { data: doctorData } = await supabase.schema('core_auth').from('user_profiles').select('id, legal_name, email').eq('id', verificationData.doctor_id).single();
-        setDoctor(doctorData);
+      if (error || !data) {
+        toast.error('No se pudo cargar la verificación');
+        router.push('/admin/dashboard');
+        return;
       }
+
+      const detail = data as {
+        id: string;
+        doctor_id: string;
+        professional_license: string;
+        colegiation_number: string | null;
+        status: string;
+        doctor: { id: string; legal_name: string; email: string };
+      };
+
+      setVerification(detail);
+      setDoctor(detail.doctor);
     };
 
     fetchData();
@@ -85,14 +93,27 @@ export default function ReviewDoctorPage() {
         </div>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <button type="button" onClick={() => setDecision('APPROVED')} className={`rounded-2xl border px-4 py-3 text-left ${decision === 'APPROVED' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200'}`}>
+        <button
+          type="button"
+          onClick={() => setDecision('APPROVED')}
+          className={`rounded-2xl border px-4 py-3 text-left ${decision === 'APPROVED' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200'}`}
+        >
           Aprobar
         </button>
-        <button type="button" onClick={() => setDecision('REJECTED')} className={`rounded-2xl border px-4 py-3 text-left ${decision === 'REJECTED' ? 'border-rose-500 bg-rose-50' : 'border-slate-200'}`}>
+        <button
+          type="button"
+          onClick={() => setDecision('REJECTED')}
+          className={`rounded-2xl border px-4 py-3 text-left ${decision === 'REJECTED' ? 'border-rose-500 bg-rose-50' : 'border-slate-200'}`}
+        >
           Rechazar
         </button>
       </div>
-      <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Notas de revisión" className="min-h-32 w-full rounded-2xl border border-slate-200 px-4 py-3" />
+      <textarea
+        value={notes}
+        onChange={(event) => setNotes(event.target.value)}
+        placeholder="Notas de revisión"
+        className="min-h-32 w-full rounded-2xl border border-slate-200 px-4 py-3"
+      />
       <div className="flex gap-3">
         <Button variant="secondary" className="w-full" onClick={() => router.back()}>Cancelar</Button>
         <Button className="w-full" onClick={handleSubmit} isLoading={loading}>Guardar decisión</Button>

@@ -12,6 +12,7 @@ export default function ProfileSelectPage() {
   const supabase = createClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [loadingRole, setLoadingRole] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -30,6 +31,8 @@ export default function ProfileSelectPage() {
         router.push('/doctor/dashboard');
       } else if (role === 'SUPER_ADMIN') {
         router.push('/admin/dashboard');
+      } else {
+        setCheckingSession(false);
       }
     };
 
@@ -40,13 +43,12 @@ export default function ProfileSelectPage() {
     if (!userId) return;
     setLoadingRole(true);
     try {
+      await updateUserRole(userId, role);
       if (role === 'PATIENT') {
-        await updateUserRole(userId, role);
         toast.success('Perfil guardado');
         router.push('/dashboard');
         return;
       }
-
       toast.success('Completa tu verificación médica');
       router.push('/auth/verify-professional');
     } catch (error) {
@@ -55,6 +57,14 @@ export default function ProfileSelectPage() {
       setLoadingRole(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-slate-500">Verificando sesión...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-12">
