@@ -41,11 +41,12 @@ export default function SignosPage() {
   }, [pas, pad, glucose]);
 
   const activeField = pas === '' ? 'pas' : pad === '' ? 'pad' : 'glucose';
-  const activeFieldLabel = activeField === 'pas'
-    ? 'Presión alta (sistólica)'
-    : activeField === 'pad'
-      ? 'Presión baja (diastólica)'
-      : 'Glucosa';
+  let activeFieldLabel = 'Glucosa';
+  if (activeField === 'pas') {
+    activeFieldLabel = 'Presión alta (sistólica)';
+  } else if (activeField === 'pad') {
+    activeFieldLabel = 'Presión baja (diastólica)';
+  }
 
   const saveData = async (data: any) => {
     if (!patientId) return;
