@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
 
 type VitalField = 'pas' | 'pad' | 'glucose';
+const NUMERIC_INPUT_PATTERN = /^\d*\.?\d*$/;
+
 type VitalFormData = {
   pas: string;
   pad: string;
@@ -42,10 +44,12 @@ export default function SignosPage() {
     loadUser();
   }, [router, supabase]);
 
+  const toNumberOrNull = (value: string) => (value === '' ? null : Number(value));
+
   const critical = useMemo(() => {
-    const pasNum = pas === '' ? null : Number(pas);
-    const padNum = pad === '' ? null : Number(pad);
-    const glucoseNum = glucose === '' ? null : Number(glucose);
+    const pasNum = toNumberOrNull(pas);
+    const padNum = toNumberOrNull(pad);
+    const glucoseNum = toNumberOrNull(glucose);
 
     const isPasCritical = pasNum !== null && !Number.isNaN(pasNum) && pasNum > 180;
     const isPadCritical = padNum !== null && !Number.isNaN(padNum) && padNum > 110;
@@ -104,7 +108,7 @@ export default function SignosPage() {
   };
 
   const handleInputChange = (field: VitalField, value: string) => {
-    if (/^\d*\.?\d*$/.test(value)) {
+    if (NUMERIC_INPUT_PATTERN.test(value)) {
       const setters = { pas: setPas, pad: setPad, glucose: setGlucose };
       setters[field](value);
     }
@@ -153,7 +157,7 @@ export default function SignosPage() {
                 className={`w-full rounded-2xl border px-4 py-3 text-2xl font-semibold ${activeField === 'glucose' ? 'border-teal-500 ring-2 ring-teal-100' : 'border-slate-200'}`}
               />
             </label>
-            <select value={contexto} onChange={(event) => setContexto(event.target.value as any)} className="w-full rounded-2xl border border-slate-200 px-4 py-3">
+            <select value={contexto} onChange={(event) => setContexto(event.target.value as 'Ayunas' | 'Postprandial')} className="w-full rounded-2xl border border-slate-200 px-4 py-3">
               <option value="Ayunas">Ayunas</option>
               <option value="Postprandial">Postprandial</option>
             </select>
