@@ -8,6 +8,14 @@ import { createVitalSigns } from '@/actions/signos';
 import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
 
+type VitalField = 'pas' | 'pad' | 'glucose';
+type VitalFormData = {
+  pas: string;
+  pad: string;
+  glucose: string;
+  contexto: 'Ayunas' | 'Postprandial';
+};
+
 export default function SignosPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -16,9 +24,10 @@ export default function SignosPage() {
   const [pad, setPad] = useState('');
   const [glucose, setGlucose] = useState('');
   const [contexto, setContexto] = useState<'Ayunas' | 'Postprandial'>('Ayunas');
+  const [activeField, setActiveField] = useState<VitalField>('pas');
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingData, setPendingData] = useState<any>(null);
+  const [pendingData, setPendingData] = useState<VitalFormData | null>(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -34,13 +43,19 @@ export default function SignosPage() {
   }, [router, supabase]);
 
   const critical = useMemo(() => {
-    const pasNum = Number(pas) || 0;
-    const padNum = Number(pad) || 0;
-    const glucoseNum = Number(glucose) || 0;
-    return pasNum > 180 || padNum > 110 || glucoseNum < 54 || glucoseNum > 300;
+    const pasNum = pas === '' ? null : Number(pas);
+    const padNum = pad === '' ? null : Number(pad);
+    const glucoseNum = glucose === '' ? null : Number(glucose);
+
+    const isPasCritical = pasNum !== null && !Number.isNaN(pasNum) && pasNum > 180;
+    const isPadCritical = padNum !== null && !Number.isNaN(padNum) && padNum > 110;
+    const isGlucoseCritical =
+      glucoseNum !== null && !Number.isNaN(glucoseNum) && (glucoseNum < 54 || glucoseNum > 300);
+
+    return isPasCritical || isPadCritical || isGlucoseCritical;
   }, [pas, pad, glucose]);
 
-  const saveData = async (data: any) => {
+  const saveData = async (data: VitalFormData) => {
     if (!patientId) return;
     setIsLoading(true);
     try {
@@ -62,6 +77,11 @@ export default function SignosPage() {
   };
 
   const handleSubmit = async () => {
+    if (!pas || !pad || !glucose) {
+      toast.error('Completa PAS, PAD y Glucosa antes de guardar');
+      return;
+    }
+
     const data = { pas, pad, glucose, contexto };
     if (critical) {
       setPendingData(data);
@@ -72,15 +92,22 @@ export default function SignosPage() {
     await saveData(data);
   };
 
-  const handleKeyPress = (value: string, field: 'pas' | 'pad' | 'glucose') => {
+  const handleKeyPress = (value: string) => {
     const setters = { pas: setPas, pad: setPad, glucose: setGlucose };
-    const current = field === 'pas' ? pas : field === 'pad' ? pad : glucose;
+    const current = activeField === 'pas' ? pas : activeField === 'pad' ? pad : glucose;
     if (value === '⌫') {
-      setters[field](current.slice(0, -1));
+      setters[activeField](current.slice(0, -1));
       return;
     }
     if (value === '.' && current.includes('.')) return;
-    setters[field](`${current}${value}`);
+    setters[activeField](`${current}${value}`);
+  };
+
+  const handleInputChange = (field: VitalField, value: string) => {
+    if (/^\d*\.?\d*$/.test(value)) {
+      const setters = { pas: setPas, pad: setPad, glucose: setGlucose };
+      setters[field](value);
+    }
   };
 
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '⌫'];
@@ -98,15 +125,33 @@ export default function SignosPage() {
           <div className="space-y-4">
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">PAS</span>
-              <input value={pas} readOnly className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-2xl font-semibold" />
+              <input
+                value={pas}
+                onFocus={() => setActiveField('pas')}
+                onChange={(event) => handleInputChange('pas', event.target.value)}
+                inputMode="decimal"
+                className={`w-full rounded-2xl border px-4 py-3 text-2xl font-semibold ${activeField === 'pas' ? 'border-teal-500 ring-2 ring-teal-100' : 'border-slate-200'}`}
+              />
             </label>
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">PAD</span>
-              <input value={pad} readOnly className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-2xl font-semibold" />
+              <input
+                value={pad}
+                onFocus={() => setActiveField('pad')}
+                onChange={(event) => handleInputChange('pad', event.target.value)}
+                inputMode="decimal"
+                className={`w-full rounded-2xl border px-4 py-3 text-2xl font-semibold ${activeField === 'pad' ? 'border-teal-500 ring-2 ring-teal-100' : 'border-slate-200'}`}
+              />
             </label>
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">Glucosa</span>
-              <input value={glucose} readOnly className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-2xl font-semibold" />
+              <input
+                value={glucose}
+                onFocus={() => setActiveField('glucose')}
+                onChange={(event) => handleInputChange('glucose', event.target.value)}
+                inputMode="decimal"
+                className={`w-full rounded-2xl border px-4 py-3 text-2xl font-semibold ${activeField === 'glucose' ? 'border-teal-500 ring-2 ring-teal-100' : 'border-slate-200'}`}
+              />
             </label>
             <select value={contexto} onChange={(event) => setContexto(event.target.value as any)} className="w-full rounded-2xl border border-slate-200 px-4 py-3">
               <option value="Ayunas">Ayunas</option>
@@ -114,9 +159,10 @@ export default function SignosPage() {
             </select>
           </div>
           <div>
+            <p className="mb-3 text-sm text-slate-600">Campo activo: <span className="font-semibold uppercase">{activeField}</span></p>
             <div className="grid grid-cols-3 gap-3">
               {keys.map((key) => (
-                <button key={key} type="button" onClick={() => handleKeyPress(key, glucose === '' ? 'pas' : pad === '' ? 'pad' : 'glucose')} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-lg font-semibold hover:bg-slate-100">
+                <button key={key} type="button" onClick={() => handleKeyPress(key)} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-lg font-semibold hover:bg-slate-100">
                   {key}
                 </button>
               ))}
@@ -129,6 +175,7 @@ export default function SignosPage() {
                 setPas('');
                 setPad('');
                 setGlucose('');
+                setActiveField('pas');
               }}>
                 Limpiar
               </Button>
