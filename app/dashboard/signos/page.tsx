@@ -40,6 +40,13 @@ export default function SignosPage() {
     return pasNum > 180 || padNum > 110 || glucoseNum < 54 || glucoseNum > 300;
   }, [pas, pad, glucose]);
 
+  const activeField = pas === '' ? 'pas' : pad === '' ? 'pad' : 'glucose';
+  const activeFieldLabel = activeField === 'pas'
+    ? 'Presión alta (sistólica)'
+    : activeField === 'pad'
+      ? 'Presión baja (diastólica)'
+      : 'Glucosa';
+
   const saveData = async (data: any) => {
     if (!patientId) return;
     setIsLoading(true);
@@ -52,7 +59,7 @@ export default function SignosPage() {
         glucose: data.glucose ? Number(data.glucose) : undefined,
         estadoIngesta: data.contexto,
       });
-      toast.success('Signos guardados');
+      toast.success('Signos guardados en tu expediente');
       router.push('/dashboard');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudieron guardar los signos');
@@ -94,29 +101,36 @@ export default function SignosPage() {
       <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Registrar signos</p>
         <h1 className="mt-2 text-3xl font-semibold text-slate-950">Captura rápida con teclado numérico</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Primero registra la presión alta y la presión baja. Al guardar, la información se almacena en tu expediente.
+        </p>
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1fr]">
           <div className="space-y-4">
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">PAS</span>
+              <span className="text-sm font-medium text-slate-700">Presión alta (sistólica)</span>
               <input value={pas} readOnly className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-2xl font-semibold" />
             </label>
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">PAD</span>
+              <span className="text-sm font-medium text-slate-700">Presión baja (diastólica)</span>
               <input value={pad} readOnly className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-2xl font-semibold" />
             </label>
             <label className="block space-y-2">
               <span className="text-sm font-medium text-slate-700">Glucosa</span>
               <input value={glucose} readOnly className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-2xl font-semibold" />
             </label>
-            <select value={contexto} onChange={(event) => setContexto(event.target.value as any)} className="w-full rounded-2xl border border-slate-200 px-4 py-3">
-              <option value="Ayunas">Ayunas</option>
-              <option value="Postprandial">Postprandial</option>
-            </select>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-slate-700">Momento de la medición</span>
+              <select value={contexto} onChange={(event) => setContexto(event.target.value as any)} className="w-full rounded-2xl border border-slate-200 px-4 py-3">
+                <option value="Ayunas">Ayunas</option>
+                <option value="Postprandial">Postprandial</option>
+              </select>
+            </label>
           </div>
           <div>
+            <p className="mb-3 text-sm font-medium text-slate-600">Campo actual: {activeFieldLabel}</p>
             <div className="grid grid-cols-3 gap-3">
               {keys.map((key) => (
-                <button key={key} type="button" onClick={() => handleKeyPress(key, glucose === '' ? 'pas' : pad === '' ? 'pad' : 'glucose')} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-lg font-semibold hover:bg-slate-100">
+                <button key={key} type="button" onClick={() => handleKeyPress(key, activeField)} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-lg font-semibold hover:bg-slate-100">
                   {key}
                 </button>
               ))}
@@ -133,6 +147,7 @@ export default function SignosPage() {
                 Limpiar
               </Button>
             </div>
+            <p className="mt-4 text-sm text-slate-500">Estos datos se guardan en tu historial de signos para que puedas consultarlos después.</p>
             {critical ? <p className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Los valores parecen críticos y pedirán confirmación adicional.</p> : null}
           </div>
         </div>

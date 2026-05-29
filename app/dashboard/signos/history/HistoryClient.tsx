@@ -57,8 +57,8 @@ export function HistoryClient({ patientId }: { patientId: string }) {
               <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getTriageColor(record.triage)}`}>{record.triage}</span>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <p><span className="font-semibold">PAS:</span> {record.content?.pas ?? 'N/A'}</p>
-              <p><span className="font-semibold">PAD:</span> {record.content?.pad ?? 'N/A'}</p>
+              <p><span className="font-semibold">Presión alta:</span> {record.content?.pas ?? 'N/A'}</p>
+              <p><span className="font-semibold">Presión baja:</span> {record.content?.pad ?? 'N/A'}</p>
               <p><span className="font-semibold">Glucosa:</span> {record.content?.glucose ?? 'N/A'}</p>
             </div>
           </article>
