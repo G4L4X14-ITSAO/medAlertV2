@@ -159,6 +159,9 @@ export default function SignosPage() {
             </select>
           </div>
           <div>
+            <p className="sr-only" aria-live="polite">
+              Campo activo: {activeField.toUpperCase()}
+            </p>
             <p className="mb-3 text-sm text-slate-600">Campo activo: <span className="font-semibold uppercase">{activeField}</span></p>
             <div className="grid grid-cols-3 gap-3">
               {keys.map((key) => (
