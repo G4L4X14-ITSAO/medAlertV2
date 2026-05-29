@@ -194,7 +194,9 @@ export default function SignosPage() {
               <Button variant="secondary" className="w-full" onClick={() => setShowConfirmModal(false)}>Cancelar</Button>
               <Button className="w-full" onClick={async () => {
                 setShowConfirmModal(false);
-                await saveData(pendingData);
+                if (pendingData) {
+                  await saveData(pendingData);
+                }
               }}>
                 Confirmar
               </Button>
