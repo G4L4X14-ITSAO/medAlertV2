@@ -40,7 +40,13 @@ export default function SignosPage() {
     return pasNum > 180 || padNum > 110 || glucoseNum < 54 || glucoseNum > 300;
   }, [pas, pad, glucose]);
 
-  const activeField = pas === '' ? 'pas' : pad === '' ? 'pad' : 'glucose';
+  const getActiveField = (): 'pas' | 'pad' | 'glucose' => {
+    if (pas === '') return 'pas';
+    if (pad === '') return 'pad';
+    return 'glucose';
+  };
+
+  const activeField = getActiveField();
   let activeFieldLabel = 'Glucosa';
   if (activeField === 'pas') {
     activeFieldLabel = 'Presión alta (sistólica)';
@@ -92,6 +98,7 @@ export default function SignosPage() {
   };
 
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '⌫'];
+  const keypadButtonClassName = 'rounded-2xl border border-slate-200 bg-slate-50 p-4 text-lg font-semibold hover:bg-slate-100';
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -131,7 +138,7 @@ export default function SignosPage() {
             <p className="mb-3 text-sm font-medium text-slate-600">Campo actual: {activeFieldLabel}</p>
             <div className="grid grid-cols-3 gap-3">
               {keys.map((key) => (
-                <button key={key} type="button" onClick={() => handleKeyPress(key, activeField)} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-lg font-semibold hover:bg-slate-100">
+                <button key={key} type="button" onClick={() => handleKeyPress(key, activeField)} className={keypadButtonClassName}>
                   {key}
                 </button>
               ))}
